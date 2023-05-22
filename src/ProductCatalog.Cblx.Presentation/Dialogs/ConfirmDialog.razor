@@ -1,0 +1,17 @@
+﻿<MudDialog>
+    <DialogContent>
+        <MudText>Você confirma que deseja excluir o produto?</MudText>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Outlined">Cancelar</MudButton>
+        <MudButton OnClick="Confirm" Color="Color.Error" Variant="Variant.Filled">Confirmar</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private void Confirm() => MudDialog.Close(DialogResult.Ok(true));
+
+    private void Cancel() => MudDialog.Cancel();
+}

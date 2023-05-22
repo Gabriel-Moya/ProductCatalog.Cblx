@@ -1,0 +1,89 @@
+﻿@page "/cadastro"
+@inject IProductAppService _productAppService
+
+@using System.Text.RegularExpressions
+@using System.ComponentModel.DataAnnotations
+@using FluentValidation
+@using ProductCatalog.Cblx.Application.AppService;
+@using ProductCatalog.Cblx.Application.Request;
+@using ProductCatalog.Cblx.Application.Validator;
+@using ProductCatalog.Cblx.Domain.Entities;
+@using ProductCatalog.Cblx.Domain.Enums;
+@using ProductCatalog.Cblx.Domain.Extensions;
+@using System.Globalization;
+
+<PageTitle>Cadastro de produtos</PageTitle>
+
+<MudCard Class="pa-4">
+    <MudForm
+        Model="@product"
+        @ref="@form"
+        Validation="@(productValidator.ValidateValue)"
+        ValidationDelay="0">
+
+        <MudCardContent>
+            <MudTextField @bind-Value="product.Name"
+                For="@(() => product.Name)"
+                Immediate="true"
+                Label="Nome do produto" />
+
+            <MudTextField @bind-Value="product.Description"
+                For="@(() => product.Description)"
+                Immediate="true"
+                Label="Descrição do produto"
+                Class="mt-4" />
+
+            <MudStack Row="true" Class="mt-4">
+                <MudTextField @bind-Value="product.Price"
+                    For="@(() => product.Price)"
+                    Immediate="true"
+                    Label="Preço do produto"
+                    Format="C" />
+
+                <MudTextField @bind-Value="product.Quantity"
+                    For="@(() => product.Quantity)"
+                    Immediate="true"
+                    Label="Quantidade atual em estoque" />
+
+                <MudSelect Margin="Margin.Dense"
+                    T="EProductType"
+                    Label="Tipo do produto"
+                    @bind-Value="@product.ProductType"
+                    AnchorOrigin="Origin.BottomCenter"
+                    Variant="Variant.Outlined" >
+
+                    @foreach (EProductType value in Enum.GetValues(typeof(EProductType)))
+                    {
+                        <MudSelectItem Value="@value">@value.GetDisplayName()</MudSelectItem>
+                    }
+
+                </MudSelect>
+            </MudStack>
+        </MudCardContent>
+
+    </MudForm>
+    <MudCardActions>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" OnClick="@(async () => await Submit())">Cadastrar</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+@code {
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    MudForm form;
+    ProductRequest product = new();
+    ProductRequestValidator productValidator = new ProductRequestValidator();
+
+    private async Task Submit()
+    {
+        await form.Validate();
+
+        if (form.IsValid)
+        {
+            var productSaved = await _productAppService.Create(product);
+            Snackbar.Add("Produto cadastrado!");
+            product = new();
+        }
+    }
+}

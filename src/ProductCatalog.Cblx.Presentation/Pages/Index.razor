@@ -1,0 +1,90 @@
+﻿@page "/"
+@inject IProductAppService _productAppService
+@inject IDialogService DialogService
+
+@using ProductCatalog.Cblx.Application.AppService;
+@using ProductCatalog.Cblx.Application.Response;
+@using ProductCatalog.Cblx.Domain.Extensions;
+@using ProductCatalog.Cblx.Presentation.Dialogs;
+
+<PageTitle>Lista de produtos</PageTitle>
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudTable Items="@Products"
+                  FixedHeader="true"
+                  FixedFooter="true"
+                  Height=""
+                  Striped="true">
+
+            <HeaderContent>
+                <MudTh>Nome</MudTh>
+                <MudTh>Descrição</MudTh>
+                <MudTh>Preço de Venda</MudTh>
+                <MudTh>Quantidade disponível</MudTh>
+                <MudTh>Tipo</MudTh>
+                <MudTh>Data de cadastro</MudTh>
+                <MudTh>Ações</MudTh>
+            </HeaderContent>
+
+            <RowTemplate>
+                <MudTd DataLabel="Name">@context.Name</MudTd>
+                <MudTd DataLabel="Description">@context.Description</MudTd>
+                <MudTd DataLabel="Price">@context.Price.ToString("C")</MudTd>
+                <MudTd DataLabel="Quantity">@context.Quantity</MudTd>
+                <MudTd DataLabel="ProductType">@context.ProductType.GetDisplayName()</MudTd>
+                <MudTd DataLabel="CreatedAtUtc">@context.CreatedAtUtc.ToString("dd/MM/yyyy")</MudTd>
+                <MudTd>
+                    <MudIconButton
+                        Variant="Variant.Outlined"
+                        Icon="@Icons.Material.Filled.Delete"
+                        Color="Color.Primary"
+                        Size="Size.Small"
+                        OnClick="@(() => OpenDialog(context.Id))"
+                        aria-label="delete"></MudIconButton>
+                </MudTd>
+            </RowTemplate>
+
+        </MudTable>
+    </MudItem>
+    <MudItem xs="12" Class="d-flex flex-column align-center">
+        <MudPagination Rectangular="true"
+                       Variant="Variant.Outlined"
+                       Count="5"
+                       SelectedChanged="PageChanged" />
+    </MudItem>
+</MudGrid>
+
+
+
+@code {
+    private int _productsPerPage = 5;
+    private int _currentPage = 1;
+
+    private IList<ProductResponse> Products = new List<ProductResponse>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Products = await _productAppService.GetAll(_currentPage, _productsPerPage);
+    }
+
+    private async Task PageChanged(int page)
+    {
+        _currentPage = page;
+        Products = await _productAppService.GetAll(_currentPage, _productsPerPage);
+    }
+
+    private async void OpenDialog(Guid id)
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        var dialogResult = DialogService.Show<ConfirmDialog>("Excluir produto!", options);
+        var result = await dialogResult.Result;
+
+        if (!result.Cancelled)
+        {
+            await _productAppService.Delete(id);
+            Products = await _productAppService.GetAll(_currentPage, _productsPerPage);
+            StateHasChanged();
+        }
+    }
+}
